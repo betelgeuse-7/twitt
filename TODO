@@ -1,4 +1,2 @@
-
-api/tweet.go
-	TODO authorization required
-	TODO pq: syntax error at or near "hate"
+schema.sql
+	TODO is it right?

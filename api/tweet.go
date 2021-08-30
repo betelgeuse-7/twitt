@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/betelgeuse-7/twitt/api/helpers"
 	"github.com/betelgeuse-7/twitt/db"
+	"github.com/go-chi/chi/v5"
 )
 
 func GetTweet(w http.ResponseWriter, r *http.Request) {
 	apiError := ApiError{}
-	id, err := helpers.ParseIDFromPath(r.URL.Path, -1)
+	id64, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		apiError = ApiError{
 			Code:    500,
@@ -21,6 +23,7 @@ func GetTweet(w http.ResponseWriter, r *http.Request) {
 		apiError.Give(w)
 		return
 	}
+	id := int(id64)
 	// get tweet from db
 	tweet := db.GetTweetById(id)
 
@@ -37,7 +40,6 @@ func GetTweet(w http.ResponseWriter, r *http.Request) {
 	helpers.JSON(w, tweet)
 }
 
-// TODO authorization required
 func NewTweet(w http.ResponseWriter, r *http.Request) {
 	var apiError ApiError
 	var body struct {
@@ -67,8 +69,6 @@ func NewTweet(w http.ResponseWriter, r *http.Request) {
 	} else {
 		lastInsertedId, err := db.NewTweet(body.Content, body.Author)
 		if err != nil {
-			// TODO pq: syntax error at or near "hate"
-			fmt.Println(body)
 			fmt.Println(err)
 			apiError = ApiError{
 				Title:   "server error",

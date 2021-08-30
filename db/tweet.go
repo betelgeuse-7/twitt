@@ -30,7 +30,7 @@ func GetTweetById(id int) Tweet {
 
 func NewTweet(content string, author int) (int, error) {
 	db := GetDB()
-	query := fmt.Sprintf("insert into tweets (content, author) values (%s, %d);", content, author)
+	query := fmt.Sprintf("insert into tweets (content, author) values ('%s', %d);", content, author)
 	res, err := db.Exec(query)
 	if err != nil {
 		return 0, err

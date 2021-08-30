@@ -18,13 +18,12 @@ func main() {
 		log.Println("Couldn't load env variables. ERR -> ", err)
 	}
 	postgres := db.Postgres{
-		Host:     "localhost",
-		Port:     "5432",
-		User:     "postgres",
-		DbName:   "twitt",
+		Host:     os.Getenv("POSTGRES_HOST"),
+		Port:     os.Getenv("POSTGRES_PORT"),
+		User:     os.Getenv("POSTGRES_USER"),
+		DbName:   os.Getenv("POSTGRES_DB"),
 		Password: os.Getenv("POSTGRES_PASSWORD"),
 	}
-
 	db, err := postgres.Connect()
 	if err != nil {
 		log.Fatalln(err)

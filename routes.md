@@ -25,4 +25,7 @@ GET /api/v1/users/:id/followed_by
     get users who follow user :id
 POST /api/v1/users/follow/:id
     follow user
-
+POST /api/v1/users/new
+    new user
+POST /api/v1/users/login
+    log in user

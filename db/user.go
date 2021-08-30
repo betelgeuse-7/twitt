@@ -1,8 +1,23 @@
 package db
 
-import "time"
+import (
+	"database/sql"
+	"fmt"
+	"time"
+)
 
 type User struct {
+	Id           uint           `json:"user_id"`
+	Username     string         `json:"username"`
+	Password     string         // ! do not expose this
+	Email        string         // ! do not expose this
+	Handle       string         `json:"handle"`
+	RegisterDate time.Time      `json:"register_date"`
+	Location     sql.NullString `json:"location"`
+	Bio          sql.NullString `json:"bio"`
+}
+
+type UserWithoutNullString struct {
 	Id           uint      `json:"user_id"`
 	Username     string    `json:"username"`
 	Password     string    // ! do not expose this
@@ -11,4 +26,44 @@ type User struct {
 	RegisterDate time.Time `json:"register_date"`
 	Location     string    `json:"location"`
 	Bio          string    `json:"bio"`
+}
+
+func NewUser(username, password, email, handle string) error {
+	user := struct {
+		Username string
+		Password string
+		Email    string
+		Handle   string
+	}{Username: username, Password: password, Email: email, Handle: handle}
+	query := fmt.Sprintf("insert into users (username, email, password, handle) values ('%s', '%s', '%s', '%s');", user.Username, user.Email, user.Password, user.Handle)
+	db := GetDB()
+	_, err := db.Exec(query)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+
+func GetUserByEmail(email string) (UserWithoutNullString, error) {
+	query := fmt.Sprintf("select * from users u where u.email='%s';", email)
+	db := GetDB()
+	var user User
+	row := db.QueryRow(query)
+	err := row.Scan(&user.Id, &user.Username, &user.Handle, &user.RegisterDate, &user.Location, &user.Bio, &user.Password, &user.Email)
+	if err != nil {
+		fmt.Println(err)
+		return UserWithoutNullString{}, err
+	}
+	userWithoutNullString := UserWithoutNullString{
+		Id:           user.Id,
+		Username:     user.Username,
+		Password:     user.Password,
+		Email:        user.Email,
+		Handle:       user.Handle,
+		RegisterDate: user.RegisterDate,
+		Location:     user.Location.String,
+		Bio:          user.Bio.String,
+	}
+	return userWithoutNullString, nil
 }

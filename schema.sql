@@ -1,10 +1,10 @@
 -- Postgres database schema for twitt project
 create table users (
 	id serial primary key,
-	username varchar(255) not null,
+	username varchar(255) not null unique,
 	password text not null,
-	email text not null,
-	handle varchar(255) not null,
+	email text not null unique,
+	handle varchar(255) not null unique,
 	register_date date not null default current_date,
 	location varchar(255),
 	bio text
@@ -32,8 +32,8 @@ create table follows (
 	unfollow_date timestamp,
 	primary key(user_id, follower_id)
 );
-
+-- // TODO is it right?
 create table likes (
 	tweet_id int references tweets(id),
-	who_liked int references users(id)
+	who_liked int references users(id)string
 );
