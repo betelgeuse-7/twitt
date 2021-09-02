@@ -3,11 +3,13 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/betelgeuse-7/twitt/api/helpers"
 	"github.com/betelgeuse-7/twitt/db"
+	chi "github.com/go-chi/chi/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -123,4 +125,31 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	helpers.JSON(w, map[string]string{
 		"token": jwt,
 	})
+}
+
+func LikedTweets(w http.ResponseWriter, r *http.Request) {
+	offsetStr := r.URL.Query().Get("offset")
+	limitStr := r.URL.Query().Get("limit")
+	idStr := chi.URLParam(r, "id")
+	if offsetStr == "" || limitStr == "" {
+		fmt.Fprint(w, "please include offset and limit parameters.\n")
+		return
+	}
+	offset, _ := helpers.StrToInt(offsetStr)
+	limit, _ := helpers.StrToInt(limitStr)
+	id, err := helpers.StrToInt(idStr)
+	if err != nil {
+		http.Error(w, "please provide an id (int)", http.StatusBadRequest)
+		return
+	}
+	tweets, err := db.GetUserLikedTweets(id, offset, limit)
+	if err != nil {
+		ApiError{
+			Title:   "internal error",
+			Message: "internal server error",
+			Code:    500,
+		}.Give(w)
+		return
+	}
+	helpers.JSON(w, tweets)
 }

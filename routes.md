@@ -23,6 +23,8 @@ GET /api/v1/users/:id/follows
     get followed users
 GET /api/v1/users/:id/followed_by
     get users who follow user :id
+GET /api/v1/users/:id/liked
+    get liked tweets
 POST /api/v1/users/follow/:id
     follow user
 POST /api/v1/users/new

@@ -50,7 +50,7 @@ func GetUserByEmail(email string) (UserWithoutNullString, error) {
 	db := GetDB()
 	var user User
 	row := db.QueryRow(query)
-	err := row.Scan(&user.Id, &user.Username, &user.Handle, &user.RegisterDate, &user.Location, &user.Bio, &user.Password, &user.Email)
+	err := row.Scan(&user.Id, &user.Username, &user.Password, &user.Email, &user.Handle, &user.RegisterDate, &user.Location, &user.Bio)
 	if err != nil {
 		fmt.Println(err)
 		return UserWithoutNullString{}, err
@@ -66,4 +66,30 @@ func GetUserByEmail(email string) (UserWithoutNullString, error) {
 		Bio:          user.Bio.String,
 	}
 	return userWithoutNullString, nil
+}
+
+func GetUserLikedTweets(userId, offset, limit int) ([]Tweet, error) {
+	if offset < 0 {
+		offset = 0
+	}
+	var tweets []Tweet
+	db := GetDB()
+	query := fmt.Sprintf("select tweet_id from likes l where l.who_liked=%d limit %d offset %d;", userId, limit, offset)
+	rows, err := db.Query(query)
+	if err != nil {
+		return tweets, err
+	}
+	for rows.Next() {
+		var tweetId int
+		var tweet Tweet
+		rows.Scan(&tweetId)
+		query2 := fmt.Sprintf("select * from tweets t where t.id=%d", tweetId)
+		rows2 := db.QueryRow(query2)
+		rows2.Scan(&tweet.Id, &tweet.Content, &tweet.Author, &tweet.Date)
+		tweets = append(tweets, tweet)
+	}
+	if rows.Err() != nil {
+		return tweets, err
+	}
+	return tweets, nil
 }

@@ -38,3 +38,24 @@ func NewTweet(content string, author int) (int, error) {
 	lastId, _ := res.LastInsertId()
 	return int(lastId), nil
 }
+
+func LikeTweet(tweetId, userId int) error {
+	db := GetDB()
+	query := fmt.Sprintf("insert into likes (tweet_id, who_liked) values (%d, %d);", tweetId, userId)
+	_, err := db.Exec(query)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteTweet(id int) error {
+	db := GetDB()
+	query := fmt.Sprintf("delete from tweets t where t.id=%d;", id)
+	_, err := db.Exec(query)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}

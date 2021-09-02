@@ -13,27 +13,28 @@ create table users (
 create table tweets (
 	id serial primary key,
 	content varchar(280) not null,
-	author int references users(id),
+	author int references users(id) on delete cascade,
 	date timestamp not null default localtimestamp
 );
 
 create table comments (
 	id serial primary key,
 	content varchar(280) not null,
-	tweet int references tweets(id),
-	author int references users(id),
+	tweet int references tweets(id) on delete cascade,
+	author int references users(id) on delete cascade,
 	date timestamp not null default localtimestamp
 );
 
 create table follows (
-	user_id int references users(id),
-	follower_id int references users(id),
+	user_id int references users(id) on delete cascade,
+	follower_id int references users(id) on delete cascade,
 	follow_date timestamp not null default localtimestamp,
 	unfollow_date timestamp,
 	primary key(user_id, follower_id)
 );
 -- // TODO is it right?
 create table likes (
-	tweet_id int references tweets(id),
-	who_liked int references users(id)string
+	tweet_id int references tweets(id) on delete cascade,
+	who_liked int references users(id) on delete cascade
+	unique(tweet_id, who_liked)
 );

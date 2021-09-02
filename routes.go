@@ -16,10 +16,14 @@ func routes() *chi.Mux {
 	tweetsRoute := chi.NewRouter()
 	tweetsRoute.Get("/{id}", api.GetTweet)
 	tweetsRoute.Post("/", api.NewTweet)
+	tweetsRoute.Post("/{id}/like", api.LikeTweet)
+	tweetsRoute.Delete("/{id}", api.DeleteTweet)
 
 	usersRoute := chi.NewRouter()
 	usersRoute.Post("/new", api.Register)
 	usersRoute.Post("/login", api.Login)
+	// ?offset={offset}&limit={limit}
+	usersRoute.Get("/{id}/liked", api.LikedTweets)
 
 	r.Mount("/api/v1/tweet", tweetsRoute)
 	r.Mount("/api/v1/users", usersRoute)
