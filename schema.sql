@@ -32,7 +32,7 @@ create table follows (
 	unfollow_date timestamp,
 	primary key(user_id, follower_id)
 );
--- // TODO is it right?
+
 create table likes (
 	tweet_id int references tweets(id) on delete cascade,
 	who_liked int references users(id) on delete cascade
