@@ -18,12 +18,20 @@ func routes() *chi.Mux {
 	tweetsRoute.Post("/", api.NewTweet)
 	tweetsRoute.Post("/{id}/like", api.LikeTweet)
 	tweetsRoute.Delete("/{id}", api.DeleteTweet)
+	tweetsRoute.Get("/{id}/comments", api.GetCommentsForTweet)
+	tweetsRoute.Post("/comments/new", api.NewCommentForTweet)
+	tweetsRoute.Get("/", api.GetTweetsWithHashtag)
 
 	usersRoute := chi.NewRouter()
 	usersRoute.Post("/new", api.Register)
 	usersRoute.Post("/login", api.Login)
-	// ?offset={offset}&limit={limit}
 	usersRoute.Get("/{id}/liked", api.LikedTweets)
+	usersRoute.Get("/{id}/feed", api.UserFeed)
+	usersRoute.Get("/{id}", api.UserProfile)
+	usersRoute.Get("/{id}/follows", api.UserFollowing)
+	usersRoute.Get("/{id}/followed_by", api.UserFollowedBy)
+	usersRoute.Get("/{id}/liked", api.UserLikedTweets)
+	usersRoute.Get("/follow/{id}", api.FollowUser)
 
 	r.Mount("/api/v1/tweet", tweetsRoute)
 	r.Mount("/api/v1/users", usersRoute)

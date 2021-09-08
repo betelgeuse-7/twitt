@@ -126,3 +126,9 @@ func DeleteTweet(w http.ResponseWriter, r *http.Request) {
 		"message": "deleted tweet!",
 	})
 }
+
+func GetCommentsForTweet(w http.ResponseWriter, r *http.Request) {}
+
+func NewCommentForTweet(w http.ResponseWriter, r *http.Request) {}
+
+func GetTweetsWithHashtag(w http.ResponseWriter, r *http.Request) {}

@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/betelgeuse-7/twitt/api/helpers"
 	"github.com/betelgeuse-7/twitt/db"
 	chi "github.com/go-chi/chi/v5"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const CONSTRAINT_USERNAME_UNIQUE = "users_username_key"
+const CONSTRAINT_EMAIL_UNIQUE = "users_email_key"
+const CONSTRAINT_HANDLE_UNIQUE = "users_handle_key"
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	var apiError ApiError
@@ -49,6 +54,23 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	// save to db
 	err = db.NewUser(userData.Username, userData.Password, userData.Email, userData.Handle)
 	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") {
+			var uniqueConstraintFor = ":)"
+			if strings.Contains(err.Error(), CONSTRAINT_HANDLE_UNIQUE) {
+				uniqueConstraintFor = "handle"
+			} else if strings.Contains(err.Error(), CONSTRAINT_EMAIL_UNIQUE) {
+				uniqueConstraintFor = "email"
+			} else if strings.Contains(err.Error(), CONSTRAINT_USERNAME_UNIQUE) {
+				uniqueConstraintFor = "username"
+			}
+			apiError = ApiError{
+				Title:   fmt.Sprintf("%s already exists", uniqueConstraintFor),
+				Message: "choose another one",
+				Code:    400,
+			}
+			apiError.Give(w)
+			return
+		}
 		log.Println(err)
 		apiError = ApiError{
 			Title:   "internal error",
@@ -153,3 +175,30 @@ func LikedTweets(w http.ResponseWriter, r *http.Request) {
 	}
 	helpers.JSON(w, tweets)
 }
+
+func UserFeed(w http.ResponseWriter, r *http.Request) {}
+
+func UserProfile(w http.ResponseWriter, r *http.Request) {}
+
+func UserFollowing(w http.ResponseWriter, r *http.Request) {
+	/*
+		var apiError ApiError
+		userId, err := helpers.StrToInt(r.Context().Value("userId").(string))
+		if err != nil {
+			apiError = ApiError{
+				Title:   "internal error",
+				Message: "internal server error",
+				Code:    500,
+			}
+			apiError.Give(w)
+			return
+		}
+		userFollows := db.GetFollowedUsers(userId)
+	*/
+}
+
+func UserFollowedBy(w http.ResponseWriter, r *http.Request) {}
+
+func UserLikedTweets(w http.ResponseWriter, r *http.Request) {}
+
+func FollowUser(w http.ResponseWriter, r *http.Request) {}

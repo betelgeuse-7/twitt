@@ -28,6 +28,27 @@ type UserWithoutNullString struct {
 	Bio          string    `json:"bio"`
 }
 
+type PublicUser struct {
+	Id           uint      `json:"user_id"`
+	Username     string    `json:"username"`
+	Handle       string    `json:"handle"`
+	RegisterDate time.Time `json:"register_date"`
+	Location     string    `json:"location"`
+	Bio          string    `json:"bio"`
+}
+
+// return a PublicUser with filled fields.
+func (uwns UserWithoutNullString) publicUser() PublicUser {
+	return PublicUser{
+		Id:           uwns.Id,
+		Username:     uwns.Username,
+		Handle:       uwns.Handle,
+		RegisterDate: uwns.RegisterDate,
+		Location:     uwns.Location,
+		Bio:          uwns.Bio,
+	}
+}
+
 func NewUser(username, password, email, handle string) error {
 	user := struct {
 		Username string
@@ -93,3 +114,21 @@ func GetUserLikedTweets(userId, offset, limit int) ([]Tweet, error) {
 	}
 	return tweets, nil
 }
+
+/*
+func GetFollowedUsers(userId int) ([]PublicUser, error) {
+	db := GetDB()
+	// * JOIN
+	query := fmt.Sprintf("%d", 1)
+	rows, err := db.Query(query)
+	if err != nil {
+		fmt.Println(err)
+		return []PublicUser{}, err
+	}
+	for rows.Next() {
+
+	}
+
+	return []PublicUser{}, nil
+}
+*/
