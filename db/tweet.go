@@ -44,6 +44,7 @@ func LikeTweet(tweetId, userId int) error {
 	query := fmt.Sprintf("insert into likes (tweet_id, who_liked) values (%d, %d);", tweetId, userId)
 	_, err := db.Exec(query)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	return nil

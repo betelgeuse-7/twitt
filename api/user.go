@@ -42,12 +42,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	pwd, err := helpers.HashPassword(userData.Password)
 	if err != nil {
 		log.Println(err)
-		apiError = ApiError{
-			Title:   "internal error",
-			Message: "internal server error",
-			Code:    500,
-		}
-		apiError.Give(w)
+		GiveInternalServerError(w)
 		return
 	}
 	userData.Password = pwd
@@ -104,7 +99,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// find user with email
-	userFromDb, err := db.GetUserByEmail(user.Email)
+	userFromDb, err := db.GetUserBy("email", user.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			apiError = ApiError{
@@ -135,12 +130,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// generate jwt
 	jwt, err := NewJWT(int(userFromDb.Id))
 	if err != nil {
-		apiError = ApiError{
-			Title:   "internal error",
-			Message: "internal server error",
-			Code:    500,
-		}
-		apiError.Give(w)
+		GiveInternalServerError(w)
 		return
 	}
 	// give jwt
@@ -176,29 +166,63 @@ func LikedTweets(w http.ResponseWriter, r *http.Request) {
 	helpers.JSON(w, tweets)
 }
 
-func UserFeed(w http.ResponseWriter, r *http.Request) {}
-
-func UserProfile(w http.ResponseWriter, r *http.Request) {}
-
-func UserFollowing(w http.ResponseWriter, r *http.Request) {
-	/*
-		var apiError ApiError
-		userId, err := helpers.StrToInt(r.Context().Value("userId").(string))
-		if err != nil {
-			apiError = ApiError{
-				Title:   "internal error",
-				Message: "internal server error",
-				Code:    500,
-			}
-			apiError.Give(w)
-			return
-		}
-		userFollows := db.GetFollowedUsers(userId)
-	*/
+func UserProfile(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		fmt.Println("type assertion failed")
+		GiveInternalServerError(w)
+		return
+	}
+	// TODO return a public user.
+	// ! this is exposing password and email now.
+	userProfile, err := db.GetUserBy("id", userId)
+	if err != nil {
+		GiveInternalServerError(w)
+		return
+	}
+	userFollowStats, err := db.GetFollowCounts(userId)
+	if err != nil {
+		GiveInternalServerError(w)
+		return
+	}
+	helpers.JSON(w, map[string]interface{}{
+		"user":         userProfile,
+		"follow_stats": userFollowStats,
+	})
 }
 
-func UserFollowedBy(w http.ResponseWriter, r *http.Request) {}
+func UserFollowing(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		fmt.Println("type assertion failed")
+		GiveInternalServerError(w)
+		return
+	}
+	userFollows, err := db.GetFollowedUsers(userId)
+	if err != nil {
+		GiveInternalServerError(w)
+		return
+	}
+	helpers.JSON(w, userFollows)
+}
+
+func UserFollowedBy(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		fmt.Println("type assertion failed.")
+		GiveInternalServerError(w)
+		return
+	}
+	userFollowedBy, err := db.GetUserFollowedBy(userId)
+	if err != nil {
+		GiveInternalServerError(w)
+		return
+	}
+	helpers.JSON(w, userFollowedBy)
+}
 
 func UserLikedTweets(w http.ResponseWriter, r *http.Request) {}
 
 func FollowUser(w http.ResponseWriter, r *http.Request) {}
+
+func UserFeed(w http.ResponseWriter, r *http.Request) {}

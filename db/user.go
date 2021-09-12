@@ -49,6 +49,11 @@ func (uwns UserWithoutNullString) publicUser() PublicUser {
 	}
 }
 
+type followerStat struct {
+	FollowerCount  int `json:"follower_count"`
+	FollowingCount int `json:"following_count"`
+}
+
 func NewUser(username, password, email, handle string) error {
 	user := struct {
 		Username string
@@ -66,8 +71,16 @@ func NewUser(username, password, email, handle string) error {
 	return nil
 }
 
-func GetUserByEmail(email string) (UserWithoutNullString, error) {
-	query := fmt.Sprintf("select * from users u where u.email='%s';", email)
+func GetUserBy(type_, value interface{}) (UserWithoutNullString, error) {
+	var query string
+	if type_ == "email" {
+		query = fmt.Sprintf("select * from users u where u.email='%s';", value)
+	} else if type_ == "id" {
+		// we can pass id as a string. (no problem) (postgres)
+		query = fmt.Sprintf("select * from users u where u.id='%d';", value)
+	} else {
+		panic("pass a valid identifier")
+	}
 	db := GetDB()
 	var user User
 	row := db.QueryRow(query)
@@ -89,6 +102,7 @@ func GetUserByEmail(email string) (UserWithoutNullString, error) {
 	return userWithoutNullString, nil
 }
 
+// TODO refactor this
 func GetUserLikedTweets(userId, offset, limit int) ([]Tweet, error) {
 	if offset < 0 {
 		offset = 0
@@ -115,20 +129,87 @@ func GetUserLikedTweets(userId, offset, limit int) ([]Tweet, error) {
 	return tweets, nil
 }
 
-/*
 func GetFollowedUsers(userId int) ([]PublicUser, error) {
+	var followedUsers []PublicUser
 	db := GetDB()
-	// * JOIN
-	query := fmt.Sprintf("%d", 1)
+	query := fmt.Sprintf("select id, username, email, password, handle, register_date, location, bio from users u inner join follows f on f.user_id=u.id and f.follower_id=%d;", userId)
 	rows, err := db.Query(query)
 	if err != nil {
 		fmt.Println(err)
 		return []PublicUser{}, err
 	}
 	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &user.Handle, &user.RegisterDate, &user.Location, &user.Bio)
+		if err != nil {
+			fmt.Println(err)
+			return []PublicUser{}, err
+		}
 
+		u := UserWithoutNullString{
+			Id:           user.Id,
+			Username:     user.Username,
+			Password:     user.Password,
+			Email:        user.Email,
+			Handle:       user.Handle,
+			RegisterDate: user.RegisterDate,
+			Location:     user.Location.String,
+			Bio:          user.Bio.String,
+		}.publicUser()
+		followedUsers = append(followedUsers, u)
 	}
-
-	return []PublicUser{}, nil
+	return followedUsers, nil
 }
-*/
+
+func GetUserFollowedBy(userId int) ([]PublicUser, error) {
+	var followingUsers []PublicUser
+	db := GetDB()
+	query := fmt.Sprintf("select id, username, email, password, handle, register_date, location, bio from users u inner join follows f on f.follower_id=u.id and f.user_id=%d;", userId)
+	rows, err := db.Query(query)
+	if err != nil {
+		fmt.Println(err)
+		return []PublicUser{}, err
+	}
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &user.Handle, &user.RegisterDate, &user.Location, &user.Bio)
+		if err != nil {
+			fmt.Println(err)
+			return []PublicUser{}, err
+		}
+
+		u := UserWithoutNullString{
+			Id:           user.Id,
+			Username:     user.Username,
+			Password:     user.Password,
+			Email:        user.Email,
+			Handle:       user.Handle,
+			RegisterDate: user.RegisterDate,
+			Location:     user.Location.String,
+			Bio:          user.Bio.String,
+		}.publicUser()
+		followingUsers = append(followingUsers, u)
+	}
+	return followingUsers, nil
+}
+
+func GetFollowCounts(userId int) (followerStat, error) {
+	db := GetDB()
+	followingCountQuery := fmt.Sprintf("select count(id) from users u inner join follows f on f.user_id = u.id and f.follower_id = %d;", userId)
+	followerCountQuery := fmt.Sprintf("select count(id) from users u inner join follows f on f.follower_id = u.id and f.user_id = %d;", userId)
+
+	var followStats followerStat
+	followerCountRow := db.QueryRow(followerCountQuery)
+	followerCountRow.Scan(&followStats.FollowerCount)
+	if err := followerCountRow.Err(); err != nil {
+		fmt.Println(err)
+		return followerStat{}, err
+	}
+	followingCountRow := db.QueryRow(followingCountQuery)
+	followingCountRow.Scan(&followStats.FollowingCount)
+	if err := followingCountRow.Err(); err != nil {
+		fmt.Println(err)
+		return followerStat{}, err
+	}
+	return followStats, nil
+}

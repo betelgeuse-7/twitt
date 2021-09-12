@@ -30,6 +30,10 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "not authorized", http.StatusUnauthorized)
 			return
 		}
+		if len(strings.Split(authHeader, " ")) != 2 {
+			http.Error(w, "not authorized (bad Authorization header)", http.StatusUnauthorized)
+			return
+		}
 		bearerToken := strings.Split(authHeader, " ")[1]
 		token, err := jwt.Parse(bearerToken, keyFunc)
 		if err != nil || !token.Valid {

@@ -18,3 +18,11 @@ func (ae ApiError) Give(w http.ResponseWriter) {
 	w.WriteHeader(ae.Code)
 	helpers.JSON(w, ae)
 }
+
+func GiveInternalServerError(w http.ResponseWriter) {
+	ApiError{
+		Title:   "internal error",
+		Message: "internal server error",
+		Code:    500,
+	}.Give(w)
+}

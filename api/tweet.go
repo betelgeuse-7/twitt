@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/betelgeuse-7/twitt/api/helpers"
 	"github.com/betelgeuse-7/twitt/db"
 	"github.com/go-chi/chi/v5"
 )
+
+const CONSTRAINT_LIKE_ONCE = "likes_who_liked_fkey"
 
 func GetTweet(w http.ResponseWriter, r *http.Request) {
 	apiError := ApiError{}
@@ -43,12 +46,7 @@ func NewTweet(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&body)
 	if err != nil {
 		fmt.Println(err)
-		apiError = ApiError{
-			Code:    500,
-			Title:   "internal error",
-			Message: "internal server error",
-		}
-		apiError.Give(w)
+		GiveInternalServerError(w)
 		return
 	}
 	if body.Content == "" {
@@ -62,38 +60,28 @@ func NewTweet(w http.ResponseWriter, r *http.Request) {
 		lastInsertedId, err := db.NewTweet(body.Content, userId)
 		if err != nil {
 			fmt.Println(err)
-			apiError = ApiError{
-				Title:   "server error",
-				Message: "internal server error",
-				Code:    500,
-			}
-			apiError.Give(w)
+			GiveInternalServerError(w)
 			return
 		}
 		helpers.JSON(w, lastInsertedId)
 	}
 }
 
-// {"userid": 1}
 func LikeTweet(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		fmt.Println("type assertion failed..")
+		GiveInternalServerError(w)
+		return
+	}
 	tweetId, err := helpers.StrToInt(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "id must be an int", http.StatusBadRequest)
 		return
 	}
-	var apiError ApiError
-	var body struct {
-		UserId int
-	}
-	json.NewDecoder(r.Body).Decode(&body)
-	err = db.LikeTweet(tweetId, body.UserId)
-	if err != nil {
-		apiError = ApiError{
-			Title:   "internal error",
-			Message: "server error",
-			Code:    500,
-		}
-		apiError.Give(w)
+	err = db.LikeTweet(tweetId, userId)
+	if !strings.Contains(err.Error(), CONSTRAINT_LIKE_ONCE) {
+		GiveInternalServerError(w)
 		return
 	}
 	helpers.JSON(w, map[string]string{
