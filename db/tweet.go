@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// ! https://golang.org/doc/tutorial/database-access#:~:text=By%20separating%20the%20SQL%20statement%20from%20parameter%20values%20(rather%20than%20concatenating%20them%20with%2C%20say%2C%20fmt.Sprintf)%2C%20you%20enable%20the%20database/sql%20package%20to%20send%20the%20values%20separate%20from%20the%20SQL%20text%2C%20removing%20any%20SQL%20injection%20risk.
+
 type Tweet struct {
 	Id      uint      `json:"tweet_id"`
 	Content string    `json:"content"`
