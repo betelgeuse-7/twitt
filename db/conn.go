@@ -31,7 +31,6 @@ func (p Postgres) Connect() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	database = db
 	return db, nil
 }

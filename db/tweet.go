@@ -17,9 +17,8 @@ type Tweet struct {
 
 func GetTweetById(id int) Tweet {
 	var tweet Tweet
-	query := fmt.Sprintf("select * from tweets t where t.id = %d;", id)
 	db := GetDB()
-	row := db.QueryRow(query)
+	row := db.QueryRow("select * from tweets t where t.id = $1", id)
 	if row.Err() != nil {
 		return tweet
 	}
@@ -32,8 +31,7 @@ func GetTweetById(id int) Tweet {
 
 func NewTweet(content string, author int) (int, error) {
 	db := GetDB()
-	query := fmt.Sprintf("insert into tweets (content, author) values ('%s', %d);", content, author)
-	res, err := db.Exec(query)
+	res, err := db.Exec("insert into tweets (content, author) values ($1, $2)", content, author)
 	if err != nil {
 		return 0, err
 	}
@@ -43,8 +41,7 @@ func NewTweet(content string, author int) (int, error) {
 
 func LikeTweet(tweetId, userId int) error {
 	db := GetDB()
-	query := fmt.Sprintf("insert into likes (tweet_id, who_liked) values (%d, %d);", tweetId, userId)
-	_, err := db.Exec(query)
+	_, err := db.Exec("insert into likes (tweet_id, who_liked) values ($1, $2)", tweetId, userId)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -54,8 +51,7 @@ func LikeTweet(tweetId, userId int) error {
 
 func DeleteTweet(id int) error {
 	db := GetDB()
-	query := fmt.Sprintf("delete from tweets t where t.id=%d;", id)
-	_, err := db.Exec(query)
+	_, err := db.Exec("delete from tweets t where t.id=$1", id)
 	if err != nil {
 		fmt.Println(err)
 		return err

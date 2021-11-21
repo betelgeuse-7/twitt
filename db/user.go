@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+// i can just not put password and email fields.
+// that's that easy
+// |
+// v
+
 type User struct {
 	Id           uint           `json:"user_id"`
 	Username     string         `json:"username"`
@@ -61,9 +66,8 @@ func NewUser(username, password, email, handle string) error {
 		Email    string
 		Handle   string
 	}{Username: username, Password: password, Email: email, Handle: handle}
-	query := fmt.Sprintf("insert into users (username, email, password, handle) values ('%s', '%s', '%s', '%s');", user.Username, user.Email, user.Password, user.Handle)
 	db := GetDB()
-	_, err := db.Exec(query)
+	_, err := db.Exec("insert into users (username, email, password, handle) values ($1, $2, $3, $4)", user.Username, user.Email, user.Password, user.Handle)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -72,18 +76,17 @@ func NewUser(username, password, email, handle string) error {
 }
 
 func GetUserBy(type_, value interface{}) (UserWithoutNullString, error) {
-	var query string
+	db := GetDB()
+	var row *sql.Row
+
 	if type_ == "email" {
-		query = fmt.Sprintf("select * from users u where u.email='%s';", value)
+		row = db.QueryRow("select * from users u where u.email=$1", value)
 	} else if type_ == "id" {
-		// we can pass id as a string. (no problem) (postgres)
-		query = fmt.Sprintf("select * from users u where u.id='%d';", value)
+		row = db.QueryRow("select * from users u where u.id=$1", value)
 	} else {
 		panic("pass a valid identifier")
 	}
-	db := GetDB()
 	var user User
-	row := db.QueryRow(query)
 	err := row.Scan(&user.Id, &user.Username, &user.Password, &user.Email, &user.Handle, &user.RegisterDate, &user.Location, &user.Bio)
 	if err != nil {
 		fmt.Println(err)
@@ -109,8 +112,7 @@ func GetUserLikedTweets(userId, offset, limit int) ([]Tweet, error) {
 	}
 	var tweets []Tweet
 	db := GetDB()
-	query := fmt.Sprintf("select tweet_id from likes l where l.who_liked=%d limit %d offset %d;", userId, limit, offset)
-	rows, err := db.Query(query)
+	rows, err := db.Query("select tweet_id from likes l where l.who_liked=$1 limit $2 offset $3", userId, limit, offset)
 	if err != nil {
 		return tweets, err
 	}
@@ -118,9 +120,10 @@ func GetUserLikedTweets(userId, offset, limit int) ([]Tweet, error) {
 		var tweetId int
 		var tweet Tweet
 		rows.Scan(&tweetId)
-		query2 := fmt.Sprintf("select * from tweets t where t.id=%d", tweetId)
-		rows2 := db.QueryRow(query2)
-		rows2.Scan(&tweet.Id, &tweet.Content, &tweet.Author, &tweet.Date)
+
+		rows := db.QueryRow("select * from tweets t where t.id=$1", tweetId)
+		rows.Scan(&tweet.Id, &tweet.Content, &tweet.Author, &tweet.Date)
+
 		tweets = append(tweets, tweet)
 	}
 	if rows.Err() != nil {
@@ -132,8 +135,7 @@ func GetUserLikedTweets(userId, offset, limit int) ([]Tweet, error) {
 func GetFollowedUsers(userId int) ([]PublicUser, error) {
 	var followedUsers []PublicUser
 	db := GetDB()
-	query := fmt.Sprintf("select id, username, email, password, handle, register_date, location, bio from users u inner join follows f on f.user_id=u.id and f.follower_id=%d;", userId)
-	rows, err := db.Query(query)
+	rows, err := db.Query("select id, username, email, password, handle, register_date, location, bio from users u inner join follows f on f.user_id=u.id and f.follower_id=$1", userId)
 	if err != nil {
 		fmt.Println(err)
 		return []PublicUser{}, err
@@ -164,8 +166,7 @@ func GetFollowedUsers(userId int) ([]PublicUser, error) {
 func GetUserFollowedBy(userId int) ([]PublicUser, error) {
 	var followingUsers []PublicUser
 	db := GetDB()
-	query := fmt.Sprintf("select id, username, email, password, handle, register_date, location, bio from users u inner join follows f on f.follower_id=u.id and f.user_id=%d;", userId)
-	rows, err := db.Query(query)
+	rows, err := db.Query("select id, username, email, password, handle, register_date, location, bio from users u inner join follows f on f.follower_id=u.id and f.user_id=$1", userId)
 	if err != nil {
 		fmt.Println(err)
 		return []PublicUser{}, err
@@ -194,6 +195,11 @@ func GetUserFollowedBy(userId int) ([]PublicUser, error) {
 }
 
 func GetFollowCounts(userId int) (followerStat, error) {
+	panic("(GetFollowCounts) not implemented")
+}
+
+/* // ! BAD
+func GetFollowCounts(userId int) (followerStat, error) {
 	db := GetDB()
 	followingCountQuery := fmt.Sprintf("select count(id) from users u inner join follows f on f.user_id = u.id and f.follower_id = %d;", userId)
 	followerCountQuery := fmt.Sprintf("select count(id) from users u inner join follows f on f.follower_id = u.id and f.user_id = %d;", userId)
@@ -213,3 +219,4 @@ func GetFollowCounts(userId int) (followerStat, error) {
 	}
 	return followStats, nil
 }
+*/

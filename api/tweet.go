@@ -103,11 +103,7 @@ func DeleteTweet(w http.ResponseWriter, r *http.Request) {
 	}
 	err = db.DeleteTweet(id)
 	if err != nil {
-		ApiError{
-			Title:   "internal error",
-			Message: "error while deleting the tweet",
-			Code:    500,
-		}.Give(w)
+		GiveInternalServerError(w)
 		return
 	}
 	helpers.JSON(w, map[string]string{
